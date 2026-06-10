@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriCredit — Farmer Loan Approval System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sage: #4a7c59; --sage-light: #6a9e78; --sage-dark: #2d5a3d;
+    --cream: #f8f4ee; --wheat: #e8d5b0; --wheat-dark: #c8a97a;
+    --soil: #7a5c3a; --soil-light: #9e7a54; --sky: #8eb8d4;
+    --white: #ffffff; --gray-50: #f9f9f7; --gray-100: #f0ede8;
+    --gray-200: #e2ddd6; --gray-300: #c8c0b4; --gray-500: #8a7f72;
+    --gray-700: #4a4238; --gray-900: #1e1a16;
+    --shadow-sm: 0 2px 8px rgba(74,124,89,0.08);
+    --shadow-md: 0 8px 32px rgba(74,124,89,0.12);
+    --shadow-lg: 0 20px 60px rgba(30,26,22,0.15);
+    --radius: 16px; --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--gray-900); min-height: 100vh; overflow-x: hidden; }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+ 
+  /* AUTH */
+  .auth-bg {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    position: relative; padding: 2rem;
+    background: linear-gradient(160deg, rgba(20,50,20,0.88) 0%, rgba(45,90,61,0.80) 50%, rgba(100,75,40,0.72) 100%),
+      url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=80') center/cover no-repeat;
+  }
+  .auth-bg::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.015) 60px, rgba(255,255,255,0.015) 61px),
+      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.015) 60px, rgba(255,255,255,0.015) 61px);
+  }
+  .auth-card {
+    background: rgba(255,255,255,0.97); border-radius: 24px; padding: 3rem 2.5rem;
+    width: 100%; max-width: 440px;
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.3);
+    animation: slideUp 0.6s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto; max-height: 95vh;
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  .auth-logo { display:flex; align-items:center; gap:10px; margin-bottom:1.6rem; }
+  .auth-logo-icon { width:44px; height:44px; background:linear-gradient(135deg,var(--sage),var(--sage-dark)); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .auth-logo-text { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--sage-dark); }
+  .auth-title { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; color:var(--gray-900); margin-bottom:0.4rem; }
+  .auth-subtitle { color:var(--gray-500); font-size:0.9rem; margin-bottom:2rem; }
+  .role-tabs { display:flex; gap:8px; margin-bottom:1rem; background:var(--gray-100); border-radius:12px; padding:5px; }
+  .role-tab { flex:1; padding:8px 12px; border:none; cursor:pointer; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; background:transparent; color:var(--gray-500); transition:var(--transition); }
+  .role-tab.active { background:var(--white); color:var(--sage-dark); box-shadow:0 2px 8px rgba(0,0,0,0.1); font-weight:600; }
+  .form-group { margin-bottom:1.2rem; }
+  .form-label { display:block; font-size:0.82rem; font-weight:600; color:var(--gray-700); margin-bottom:6px; letter-spacing:0.3px; }
+  .form-input { width:100%; padding:12px 16px; border:1.5px solid var(--gray-200); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.95rem; color:var(--gray-900); background:var(--white); transition:var(--transition); outline:none; }
+  .form-input:focus { border-color:var(--sage); box-shadow:0 0 0 3px rgba(74,124,89,0.12); }
+  .btn-primary { width:100%; padding:14px; background:linear-gradient(135deg,var(--sage-light),var(--sage-dark)); color:var(--white); border:none; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; margin-top:0.5rem; transition:var(--transition); }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(74,124,89,0.35); }
+  .hint-text { text-align:center; margin-top:1.2rem; font-size:0.82rem; color:var(--gray-500); line-height:1.6; }
+ 
+  /* SIGN IN / SIGN UP */
+  .auth-mode-tabs { display:flex; gap:0; margin-bottom:1.5rem; background:var(--gray-100); border-radius:12px; padding:5px; }
+  .auth-mode-tab { flex:1; padding:9px 12px; border:none; cursor:pointer; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:500; background:transparent; color:var(--gray-500); transition:var(--transition); }
+  .auth-mode-tab.active { background:var(--white); color:var(--sage-dark); box-shadow:0 2px 8px rgba(0,0,0,0.1); font-weight:600; }
+  .auth-panel { display:none; }
+  .auth-panel.active { display:block; }
+  .signup-success { background:#d5f5e3; border:1px solid #5cb87a; border-radius:10px; padding:11px 14px; margin-bottom:1rem; font-size:0.85rem; color:#1a6b3a; display:none; font-weight:500; }
+  .signup-success.show { display:block; }
+  .pw-strength-wrap { height:4px; background:var(--gray-200); border-radius:4px; margin-top:6px; overflow:hidden; }
+  .pw-strength-bar { height:100%; border-radius:4px; width:0%; transition:width 0.3s,background 0.3s; }
+  .pw-strength-label { font-size:0.72rem; color:var(--gray-500); margin-top:3px; min-height:14px; }
+  .auth-switch { text-align:center; margin-top:1rem; font-size:0.84rem; color:var(--gray-500); }
+  .auth-switch a { color:var(--sage-dark); font-weight:600; cursor:pointer; }
+  .auth-switch a:hover { text-decoration:underline; }
+ 
+  /* TOPBAR */
+  .topbar { background:var(--white); border-bottom:1px solid var(--gray-200); padding:0 2rem; display:flex; align-items:center; height:66px; position:sticky; top:0; z-index:100; box-shadow:0 1px 12px rgba(0,0,0,0.06); }
+  .topbar-logo { display:flex; align-items:center; gap:9px; font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:var(--sage-dark); margin-right:auto; }
+  .topbar-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--sage-light),var(--sage-dark)); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .topbar-badge { background:var(--sage-dark); color:var(--white); font-size:0.7rem; font-weight:600; padding:3px 10px; border-radius:20px; letter-spacing:0.5px; text-transform:uppercase; }
+  .topbar-user { display:flex; align-items:center; gap:10px; margin-left:1.5rem; }
+  .topbar-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--wheat-dark),var(--soil)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:0.85rem; }
+  .topbar-name { font-weight:600; font-size:0.9rem; color:var(--gray-700); }
+  .btn-logout { padding:7px 16px; border:1.5px solid var(--gray-200); background:transparent; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.82rem; cursor:pointer; color:var(--gray-500); transition:var(--transition); margin-left:1rem; }
+  .btn-logout:hover { border-color:#e74c3c; color:#e74c3c; }
+ 
+  /* CONTENT */
+  .content { flex:1; padding:2rem; max-width:1200px; width:100%; margin:0 auto; }
+  .page-title { font-family:'Playfair Display',serif; font-size:1.75rem; font-weight:700; color:var(--gray-900); margin-bottom:0.3rem; }
+  .page-subtitle { color:var(--gray-500); font-size:0.9rem; margin-bottom:2rem; }
+ 
+  /* STAT CARDS */
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:var(--white); border-radius:var(--radius); padding:1.4rem 1.6rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); transition:var(--transition); position:relative; overflow:hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .stat-card.green::before { background:linear-gradient(90deg,var(--sage),var(--sage-light)); }
+  .stat-card.amber::before { background:linear-gradient(90deg,var(--wheat-dark),#e8a44a); }
+  .stat-card.soil::before  { background:linear-gradient(90deg,var(--soil),var(--soil-light)); }
+  .stat-card.sky::before   { background:linear-gradient(90deg,var(--sky),#6fa8d4); }
+  .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+  .stat-icon { font-size:1.6rem; margin-bottom:0.8rem; }
+  .stat-value { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--gray-900); line-height:1; }
+  .stat-label { font-size:0.8rem; color:var(--gray-500); font-weight:500; margin-top:0.3rem; letter-spacing:0.3px; }
+ 
+  /* PROFILE CARD */
+  .profile-card { background:linear-gradient(135deg,var(--sage-dark) 0%,var(--sage) 60%,var(--sage-light) 100%); border-radius:var(--radius); padding:2rem; color:white; margin-bottom:1.5rem; position:relative; overflow:hidden; box-shadow:var(--shadow-md); }
+  .profile-card::before { content:'🌿'; position:absolute; right:1.5rem; bottom:1rem; font-size:80px; opacity:0.12; }
+  .profile-card::after { content:''; position:absolute; top:-40px; right:-40px; width:180px; height:180px; background:rgba(255,255,255,0.06); border-radius:50%; }
+  .profile-name { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; margin-bottom:0.3rem; }
+  .profile-role { font-size:0.82rem; opacity:0.75; margin-bottom:1.2rem; letter-spacing:1px; text-transform:uppercase; font-weight:500; }
+  .profile-meta { display:flex; gap:1.5rem; flex-wrap:wrap; }
+  .profile-meta-item { font-size:0.85rem; opacity:0.9; }
+  .profile-meta-item strong { display:block; font-size:1rem; opacity:1; }
+ 
+  /* ACTION CARD */
+  .action-card { background:var(--white); border-radius:var(--radius); padding:1.6rem 2rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); margin-bottom:1rem; display:flex; align-items:center; gap:1.5rem; cursor:pointer; transition:var(--transition); }
+  .action-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--sage-light); }
+  .action-icon { width:56px; height:56px; border-radius:14px; background:linear-gradient(135deg,#e8f5ec,#c8e6d0); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+  .action-text h3 { font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; margin-bottom:0.3rem; }
+  .action-text p { color:var(--gray-500); font-size:0.85rem; }
+  .action-arrow { margin-left:auto; font-size:1.2rem; color:var(--gray-300); transition:var(--transition); }
+  .action-card:hover .action-arrow { transform:translateX(4px); color:var(--sage); }
+ 
+  /* FORM */
+  .form-card { background:var(--white); border-radius:var(--radius); padding:2rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); }
+  .form-section-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--gray-900); margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--gray-200); display:flex; align-items:center; gap:8px; }
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1.2rem; }
+  .form-grid .form-group { margin-bottom:0; }
+  .form-select { width:100%; padding:12px 36px 12px 16px; border:1.5px solid var(--gray-200); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.95rem; color:var(--gray-900); background:var(--white); cursor:pointer; transition:var(--transition); outline:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7f72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; }
+  .form-select:focus { border-color:var(--sage); box-shadow:0 0 0 3px rgba(74,124,89,0.12); }
+  .btn-calculate { padding:14px 32px; background:linear-gradient(135deg,var(--sage-light),var(--sage-dark)); color:white; border:none; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; margin-top:1.8rem; transition:var(--transition); display:inline-flex; align-items:center; gap:8px; }
+  .btn-calculate:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(74,124,89,0.35); }
+  .btn-calculate:disabled { opacity:0.6; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+  .btn-back { padding:10px 20px; border:1.5px solid var(--gray-200); background:transparent; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.9rem; cursor:pointer; color:var(--gray-700); font-weight:500; transition:var(--transition); display:inline-flex; align-items:center; gap:6px; margin-bottom:1.5rem; }
+  .btn-back:hover { border-color:var(--sage); color:var(--sage); }
+ 
+  /* RESULTS */
+  .results-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+  .score-card { background:var(--white); border-radius:var(--radius); padding:1.4rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); text-align:center; transition:var(--transition); }
+  .score-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+  .score-icon { font-size:1.5rem; margin-bottom:0.5rem; }
+  .score-label { font-size:0.72rem; font-weight:600; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:0.8rem; }
+  .score-ring { position:relative; width:80px; height:80px; margin:0 auto 0.8rem; }
+  .score-ring svg { transform:rotate(-90deg); }
+  .score-ring-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:1rem; font-weight:500; color:var(--gray-900); }
+ 
+  /* RISK BANNER */
+  .risk-banner { border-radius:var(--radius); padding:1.5rem 2rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1.5rem; position:relative; overflow:hidden; }
+  .risk-banner.low    { background:linear-gradient(135deg,#d4f5e2,#a8e6bf); border:1px solid #5cb87a; }
+  .risk-banner.medium { background:linear-gradient(135deg,#fef3cd,#fde68a); border:1px solid #e8a44a; }
+  .risk-banner.high   { background:linear-gradient(135deg,#fde8e8,#f9b5b5); border:1px solid #e57373; }
+  .risk-icon { font-size:2.5rem; }
+  .risk-text h3 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; margin-bottom:0.3rem; }
+  .risk-banner.low h3    { color:#1a6b3a; }
+  .risk-banner.medium h3 { color:#7a4a00; }
+  .risk-banner.high h3   { color:#8b1a1a; }
+  .risk-text p { font-size:0.88rem; opacity:0.8; }
+  .risk-score-big { margin-left:auto; text-align:center; }
+  .risk-score-big .num { font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:700; }
+  .risk-score-big .label { font-size:0.72rem; font-weight:600; opacity:0.7; letter-spacing:0.5px; }
+ 
+  /* NPK BREAKDOWN */
+  .npk-card { background:var(--white); border-radius:var(--radius); padding:1.5rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); margin-bottom:1rem; }
+  .npk-card h4 { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--gray-900); margin-bottom:1.2rem; display:flex; align-items:center; gap:7px; }
+  .npk-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .npk-label { font-size:0.82rem; font-weight:600; color:var(--gray-700); width:110px; flex-shrink:0; }
+  .npk-bar-wrap { flex:1; height:8px; background:var(--gray-200); border-radius:8px; overflow:hidden; }
+  .npk-bar-fill { height:100%; border-radius:8px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
+  .npk-val { font-family:'DM Mono',monospace; font-size:0.8rem; font-weight:500; color:var(--gray-700); width:44px; text-align:right; }
+ 
+  /* PROGRESS BAR */
+  .progress-bar { height:8px; background:var(--gray-200); border-radius:8px; overflow:hidden; margin-top:6px; }
+  .progress-fill { height:100%; border-radius:8px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
+ 
+  /* INFO GRID */
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; }
+  .info-card { background:var(--white); border-radius:var(--radius); padding:1.5rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); }
+  .info-card h4 { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--gray-900); margin-bottom:1rem; display:flex; align-items:center; gap:7px; }
+  .suggestion-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--gray-100); font-size:0.88rem; color:var(--gray-700); line-height:1.5; }
+  .suggestion-item:last-child { border-bottom:none; }
+  .suggestion-bullet { width:22px; height:22px; border-radius:50%; flex-shrink:0; background:#e8f5ec; display:flex; align-items:center; justify-content:center; font-size:0.75rem; margin-top:1px; }
+  .explanation-text { font-size:0.88rem; color:var(--gray-700); line-height:1.7; background:var(--gray-50); border-radius:10px; padding:1rem; border-left:3px solid var(--sage); }
+ 
+  /* WEATHER TAG */
+  .weather-tag { display:inline-block; font-size:0.68rem; font-weight:600; padding:2px 8px; border-radius:20px; margin-left:6px; letter-spacing:0.3px; vertical-align:middle; }
+  .weather-tag.historical { background:#e8f5ec; color:#2d5a3d; }
+  .weather-tag.predicted  { background:#fef3cd; color:#7a4a00; }
+ 
+  /* CHECK HERO */
+  .check-hero { background:linear-gradient(135deg,var(--sage-dark),var(--sage)); border-radius:var(--radius); padding:2rem; color:white; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; overflow:hidden; position:relative; box-shadow:var(--shadow-md); }
+  .check-hero::after { content:'🌾'; position:absolute; right:1.5rem; bottom:-5px; font-size:90px; opacity:0.12; }
+  .check-hero h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:0.5rem; }
+  .check-hero p { font-size:0.88rem; opacity:0.8; max-width:340px; }
+  .btn-check { padding:12px 24px; background:white; color:var(--sage-dark); border:none; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; white-space:nowrap; transition:var(--transition); flex-shrink:0; box-shadow:0 4px 16px rgba(0,0,0,0.15); }
+  .btn-check:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+ 
+  /* API ERROR */
+  .api-error { background:#fde8e8; border:1px solid #e57373; border-radius:10px; padding:1rem 1.2rem; margin-bottom:1rem; font-size:0.88rem; color:#8b1a1a; display:none; }
+  .api-error.show { display:block; }
+ 
+  /* LOADER */
+  .loader-overlay { position:fixed; inset:0; background:rgba(248,244,238,0.93); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+  .loader-overlay.show { opacity:1; pointer-events:all; }
+  .loader-spinner { width:50px; height:50px; border:4px solid var(--gray-200); border-top-color:var(--sage); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:1rem; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loader-text { font-size:0.9rem; color:var(--gray-700); font-weight:500; }
+ 
+  /* TOAST */
+  .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(20px); background:var(--gray-900); color:white; padding:12px 24px; border-radius:10px; font-size:0.88rem; opacity:0; transition:0.3s; z-index:1000; pointer-events:none; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+ 
+  .fade-in { animation:fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+ 
+  /* XAI + JUSTIFICATION STYLES */
+  .xai-summary { background:#fff; border-left:4px solid var(--sage); border-radius:0 10px 10px 0; padding:14px 16px; font-size:0.9rem; line-height:1.65; color:var(--gray-700); margin-bottom:18px; }
+  .xai-summary strong { color:var(--sage-dark); font-weight:600; }
+  .contrib-title { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--gray-500); margin-bottom:10px; }
+  .contrib-item { background:var(--white); border-radius:10px; padding:13px 15px; margin-bottom:10px; border:1.5px solid var(--gray-200); }
+  .contrib-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .contrib-name { font-weight:600; font-size:0.9rem; color:var(--gray-900); display:flex; align-items:center; gap:6px; }
+  .contrib-meta { display:flex; align-items:center; gap:8px; }
+  .contrib-score-lbl { font-size:0.82rem; color:var(--gray-500); font-weight:500; }
+  .contrib-pill  { font-size:0.72rem; font-weight:700; padding:3px 9px; border-radius:20px; }
+  .pill-positive { background:#e6f5ec; color:#1a6b35; }
+  .pill-neutral  { background:#fff3e0; color:#8a5500; }
+  .pill-negative { background:#fdecea; color:#8b1a1a; }
+  .contrib-bar-wrap { display:flex; align-items:center; gap:10px; }
+  .contrib-bar-bg   { flex:1; height:8px; background:#f0f0f0; border-radius:4px; overflow:hidden; }
+  .contrib-bar-fill { height:100%; border-radius:4px; transition:width 1s ease; }
+  .fill-positive { background:#4a7c59; }
+  .fill-neutral  { background:#c8a97a; }
+  .fill-negative { background:#e57373; }
+  .contrib-impact { font-size:0.78rem; font-weight:600; min-width:70px; text-align:right; }
+  .impact-up   { color:#4a7c59; }
+  .impact-down { color:#e57373; }
+  .impact-neu  { color:#c8a97a; }
+  .tip-item { display:flex; gap:12px; padding:12px 14px; background:var(--white); border-radius:10px; border:1.5px solid var(--gray-200); margin-bottom:10px; align-items:flex-start; }
+  .tip-icon  { font-size:1.3rem; flex-shrink:0; margin-top:2px; }
+  .tip-title { font-weight:600; font-size:0.88rem; color:var(--gray-900); margin-bottom:3px; display:flex; align-items:center; gap:8px; }
+  .tip-text  { font-size:0.83rem; color:var(--gray-700); line-height:1.5; }
+  .priority-high   { background:#fdecea; color:#8b1a1a; font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:10px; text-transform:uppercase; }
+  .priority-medium { background:#fff3e0; color:#8a5500; font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:10px; text-transform:uppercase; }
+  .priority-good   { background:#e6f5ec; color:#1a6b35; font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:10px; text-transform:uppercase; }
+  .next-steps-box { background:var(--sage-dark); color:#fff; border-radius:10px; padding:16px 18px; margin-bottom:16px; }
+  .next-steps-box h4 { font-family:'Playfair Display',serif; font-size:1rem; margin-bottom:10px; }
+  .next-steps-box ul { padding-left:18px; font-size:0.88rem; line-height:1.8; color:rgba(255,255,255,0.88); }
+  .justification-card { border-radius:12px; padding:20px 22px; margin-bottom:20px; border:2px solid; }
+  .justification-card.just-green { background:#eaf6ef; border-color:#a8d5b5; }
+  .justification-card.just-amber { background:#fff8e6; border-color:#f5d78e; }
+  .justification-card.just-red   { background:#fdecea; border-color:#f5b7b1; }
+  .just-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .just-icon { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+  .just-icon.green { background:#4a7c59; } .just-icon.amber { background:#c47f00; } .just-icon.red { background:#e57373; }
+  .just-decision-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+  .just-decision-label.green { color:#1a5c32; } .just-decision-label.amber { color:#7d5a00; } .just-decision-label.red { color:#8b1a1a; }
+  .just-headline { font-family:'Playfair Display',serif; font-size:0.98rem; font-weight:600; }
+  .just-headline.green { color:#1a3d2b; } .just-headline.amber { color:#7d5a00; } .just-headline.red { color:#7b1a1a; }
+  .just-divider { border:none; border-top:1px solid rgba(0,0,0,0.08); margin:14px 0; }
+  .just-section-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--gray-500); margin-bottom:8px; }
+  .just-primary-reason { font-size:0.9rem; font-weight:500; color:var(--gray-900); background:rgba(255,255,255,0.7); border-radius:8px; padding:10px 13px; margin-bottom:12px; line-height:1.55; }
+  .just-reason-item { display:flex; gap:10px; align-items:flex-start; font-size:0.85rem; color:var(--gray-700); line-height:1.5; margin-bottom:7px; }
+  .just-reason-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+  .dot-green { background:#4a7c59; } .dot-amber { background:#c47f00; } .dot-red { background:#e57373; }
+  .just-next-action { background:rgba(255,255,255,0.75); border-radius:8px; padding:11px 14px; font-size:0.87rem; color:var(--gray-700); line-height:1.6; margin-bottom:10px; }
+  .just-warning { display:flex; gap:8px; align-items:flex-start; background:rgba(0,0,0,0.05); border-radius:8px; padding:10px 13px; font-size:0.83rem; color:var(--gray-700); line-height:1.5; margin-top:8px; }
+  .just-margin-pill { display:inline-block; font-size:0.78rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-left:6px; }
+  .margin-pill-amber { background:#fff3e0; color:#8a5500; } .margin-pill-red { background:#fdecea; color:#8b1a1a; }
+  .xai-section { background:var(--white); border-radius:var(--radius); padding:1.5rem; border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); margin-bottom:1rem; }
+  .xai-section-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--gray-900); margin-bottom:1rem; display:flex; align-items:center; gap:7px; padding-bottom:0.8rem; border-bottom:1px solid var(--gray-200); }
+ 
+  @media (max-width:768px) {
+    .content { padding:1rem; }
+    .form-grid { grid-template-columns:1fr; }
+    .results-grid { grid-template-columns:1fr 1fr; }
+    .check-hero { flex-direction:column; gap:1rem; }
+    .info-grid { grid-template-columns:1fr; }
+    .topbar { padding:0 1rem; }
+    .topbar-name { display:none; }
+    .risk-banner { flex-wrap:wrap; }
+    .risk-score-big { margin-left:0; }
+  }
+  @media (max-width:480px) {
+    .results-grid { grid-template-columns:1fr; }
+    .stats-grid { grid-template-columns:1fr 1fr; }
+    .auth-card { padding:2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="loader-overlay" id="loader">
+  <div class="loader-spinner"></div>
+  <div class="loader-text" id="loader-text">Running ML risk model…</div>
+</div>
+<div class="toast" id="toast"></div>
+ 
+<!-- LOGIN + SIGN UP -->
+<div class="screen active" id="screen-login">
+  <div class="auth-bg">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">🌱</div>
+        <span class="auth-logo-text">AgriCredit</span>
+      </div>
+      <div class="role-tabs">
+        <button class="role-tab active" onclick="setRole('banker',this)">🏦 Banker</button>
+        <button class="role-tab" onclick="setRole('farmer',this)">🌾 Farmer</button>
+      </div>
+      <div class="auth-mode-tabs">
+        <button class="auth-mode-tab active" id="tab-signin" onclick="setAuthMode('signin')">Sign In</button>
+        <button class="auth-mode-tab" id="tab-signup" onclick="setAuthMode('signup')">Sign Up</button>
+      </div>
+      <div class="auth-panel active" id="panel-signin">
+        <div class="form-group">
+          <label class="form-label" id="login-id-label">User ID</label>
+          <input class="form-input" id="login-id" type="text" placeholder="Enter your user ID">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="login-pw" type="password" placeholder="••••••••">
+        </div>
+        <button class="btn-primary" onclick="doLogin()">Sign In →</button>
+        <p class="hint-text" id="login-hint">
+          Demo — Banker ID: <strong>banker01</strong> · Password: <strong>demo</strong>
+        </p>
+      </div>
+      <div class="auth-panel" id="panel-signup">
+        <div class="signup-success" id="signup-success">✅ Account created! You can now Sign In.</div>
+        <div id="signup-banker-fields">
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="su-b-name" type="text" placeholder="e.g. Anita Sharma"></div>
+          <div class="form-group"><label class="form-label">Username <small style="color:var(--gray-500);font-weight:400;">(used to log in)</small></label><input class="form-input" id="su-b-username" type="text" placeholder="e.g. banker06"></div>
+          <div class="form-group"><label class="form-label">Bank Name</label><input class="form-input" id="su-b-bank" type="text" placeholder="e.g. State Bank of India"></div>
+          <div class="form-group"><label class="form-label">Branch</label><input class="form-input" id="su-b-branch" type="text" placeholder="e.g. Warangal Branch"></div>
+          <div class="form-group"><label class="form-label">Designation</label><input class="form-input" id="su-b-designation" type="text" placeholder="e.g. Loan Officer"></div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" id="su-b-pw" type="password" placeholder="Min 6 characters" oninput="checkStrength(this,'su-b-bar','su-b-label')">
+            <div class="pw-strength-wrap"><div class="pw-strength-bar" id="su-b-bar"></div></div>
+            <div class="pw-strength-label" id="su-b-label"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="su-b-pw2" type="password" placeholder="Re-enter password"></div>
+        </div>
+        <div id="signup-farmer-fields" style="display:none;">
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="su-f-name" type="text" placeholder="e.g. Ravi Kumar Reddy"></div>
+          <div class="form-group"><label class="form-label">Farmer ID <small style="color:var(--gray-500);font-weight:400;">(unique number)</small></label><input class="form-input" id="su-f-id" type="number" placeholder="e.g. 501"></div>
+          <div class="form-group"><label class="form-label">Annual Income (₹)</label><input class="form-input" id="su-f-income" type="number" placeholder="e.g. 180000"></div>
+          <div class="form-group"><label class="form-label">Land Size (acres)</label><input class="form-input" id="su-f-land" type="number" placeholder="e.g. 5.5" step="0.1"></div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" id="su-f-pw" type="password" placeholder="Min 6 characters" oninput="checkStrength(this,'su-f-bar','su-f-label')">
+            <div class="pw-strength-wrap"><div class="pw-strength-bar" id="su-f-bar"></div></div>
+            <div class="pw-strength-label" id="su-f-label"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="su-f-pw2" type="password" placeholder="Re-enter password"></div>
+        </div>
+        <button class="btn-primary" onclick="doSignUp()">Create Account →</button>
+        <div class="auth-switch">Already have an account? <a onclick="setAuthMode('signin')">Sign In</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- BANKER DASHBOARD -->
+<div class="screen" id="screen-banker">
+  <div style="display:flex;flex-direction:column;min-height:100vh;background:var(--gray-50);">
+    <div class="topbar">
+      <div class="topbar-logo"><div class="topbar-icon">🌱</div>AgriCredit</div>
+      <span class="topbar-badge">Banker Portal</span>
+      <div class="topbar-user"><div class="topbar-avatar">RK</div><span class="topbar-name">Rajesh Kumar</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+    <div class="content">
+      <div class="profile-card fade-in">
+        <div class="profile-role">Loan Officer · Branch Manager</div>
+        <div class="profile-name">Rajesh Kumar</div>
+        <div class="profile-meta">
+          <div class="profile-meta-item"><strong>State Bank of India</strong>Bank Name</div>
+          <div class="profile-meta-item"><strong>Hyderabad Central</strong>Branch</div>
+          <div class="profile-meta-item"><strong>BNK-2041</strong>Employee ID</div>
+        </div>
+      </div>
+      <div class="stats-grid fade-in">
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">284</div><div class="stat-label">Total Loans Approved</div></div>
+        <div class="stat-card amber"><div class="stat-icon">💰</div><div class="stat-value">197</div><div class="stat-label">Loans Cleared</div></div>
+        <div class="stat-card soil"><div class="stat-icon">⏳</div><div class="stat-value">87</div><div class="stat-label">Loans Pending</div></div>
+        <div class="stat-card sky"><div class="stat-icon">📊</div><div class="stat-value">69%</div><div class="stat-label">Clearance Rate</div></div>
+      </div>
+      <div class="action-card fade-in" onclick="showScreen('screen-banker-form')">
+        <div class="action-icon">📝</div>
+        <div class="action-text"><h3>Enter Farmer Details</h3><p>Run a comprehensive ML-based loan risk assessment for a farmer</p></div>
+        <span class="action-arrow">→</span>
+      </div>
+      <div class="action-card fade-in" style="border-left:4px solid var(--wheat-dark);">
+        <div class="action-icon" style="background:linear-gradient(135deg,#fef3cd,#fde68a);">📋</div>
+        <div class="action-text"><h3>View Past Assessments</h3><p>Access history of all previously evaluated loan applications</p></div>
+        <span class="action-arrow">→</span>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- BANKER FORM -->
+<div class="screen" id="screen-banker-form">
+  <div style="display:flex;flex-direction:column;min-height:100vh;background:var(--gray-50);">
+    <div class="topbar">
+      <div class="topbar-logo"><div class="topbar-icon">🌱</div>AgriCredit</div>
+      <span class="topbar-badge">Banker Portal</span>
+      <div class="topbar-user"><div class="topbar-avatar">RK</div><span class="topbar-name">Rajesh Kumar</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+    <div class="content">
+      <button class="btn-back" onclick="showScreen('screen-banker')">← Back to Dashboard</button>
+      <div class="page-title">Farmer Assessment Form</div>
+      <p class="page-subtitle">Enter the farmer's details to generate a comprehensive ML loan risk score</p>
+      <div class="api-error" id="banker-error"></div>
+      <div class="form-card fade-in">
+        <div class="form-section-title">🧑‍🌾 Farmer Identity &amp; Location</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Farmer ID <small style="color:var(--gray-500);font-weight:400;">(1–500 for dataset lookup)</small></label>
+            <input class="form-input" id="b-farmer-id" type="text" placeholder="e.g. 1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Year <small style="color:var(--gray-500);font-weight:400;">(2015–2030)</small></label>
+            <input class="form-input" id="b-year" type="number" placeholder="2024" value="2024" min="2015" max="2030">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <select class="form-select" id="b-location"><option value="Devarakonda" selected>Devarakonda</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Annual Income (₹)</label><input class="form-input" id="b-income" type="number" placeholder="e.g. 180000"></div>
+        </div>
+        <div class="form-section-title" style="margin-top:1.8rem;">🌱 Land &amp; Soil Details</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Land Size (acres)</label><input class="form-input" id="b-land" type="number" placeholder="e.g. 5.5"></div>
+          <div class="form-group"><label class="form-label">Soil Type</label>
+            <select class="form-select" id="b-soil">
+              <option value="">Select soil type…</option>
+              <option value="Clay">Clay</option>
+              <option value="Sandy">Sandy</option>
+              <option value="Loamy">Loamy</option>
+              <option value="Slit">Slit</option>
+              <option value="Peaty">Peaty</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Crop Type</label>
+            <select class="form-select" id="b-crop"><option value="Paddy" selected>Paddy</option></select>
+          </div>
+        </div>
+        <div class="form-section-title" style="margin-top:1.8rem;">🧪 NPK Soil Values</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Nitrogen — N (mg/kg) <small style="color:var(--sage);font-weight:400;">optimal: 110</small></label>
+            <input class="form-input" id="b-n" type="number" placeholder="e.g. 108">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phosphorus — P (mg/kg) <small style="color:var(--sage);font-weight:400;">optimal: 55</small></label>
+            <input class="form-input" id="b-p" type="number" placeholder="e.g. 52">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Potassium — K (mg/kg) <small style="color:var(--sage);font-weight:400;">optimal: 45</small></label>
+            <input class="form-input" id="b-k" type="number" placeholder="e.g. 43">
+          </div>
+        </div>
+        <button class="btn-calculate" id="btn-calc-banker" onclick="calculateScore('banker')">⚡ Calculate Risk Score</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div style="display:flex;flex-direction:column;min-height:100vh;background:var(--gray-50);">
+    <div class="topbar">
+      <div class="topbar-logo"><div class="topbar-icon">🌱</div>AgriCredit</div>
+      <span class="topbar-badge" id="results-badge">Results</span>
+      <div class="topbar-user"><div class="topbar-avatar" id="results-avatar">RK</div><span class="topbar-name" id="results-name">Rajesh Kumar</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+    <div class="content">
+      <button class="btn-back" id="results-back-btn">← Back</button>
+      <div class="page-title">Loan Risk Assessment Report</div>
+      <p class="page-subtitle" id="results-farmer-id">Farmer ID: — · Generated just now</p>
+ 
+      <div class="risk-banner fade-in low" id="risk-banner">
+        <div class="risk-icon" id="risk-icon">✅</div>
+        <div class="risk-text">
+          <h3 id="risk-title">—</h3>
+          <p id="risk-desc">—</p>
+        </div>
+        <div class="risk-score-big">
+          <div class="num" id="final-score-big">—</div>
+          <div class="label">FINAL SCORE / 100</div>
+        </div>
+      </div>
+ 
+      <div class="results-grid fade-in">
+        <div class="score-card">
+          <div class="score-icon">🌍</div>
+          <div class="score-label">Soil Health Score</div>
+          <div class="score-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#e2ddd6" stroke-width="7"/>
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#4a7c59" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" id="ring-soil"/>
+            </svg>
+            <div class="score-ring-num" id="num-soil">—</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="pb-soil" style="width:0%;background:#4a7c59;"></div></div>
+        </div>
+        <div class="score-card">
+          <div class="score-icon">📈</div>
+          <div class="score-label">Market Score</div>
+          <div class="score-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#e2ddd6" stroke-width="7"/>
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#c8a97a" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" id="ring-market"/>
+            </svg>
+            <div class="score-ring-num" id="num-market">—</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="pb-market" style="width:0%;background:#c8a97a;"></div></div>
+        </div>
+        <div class="score-card">
+          <div class="score-icon">🌦️</div>
+          <div class="score-label">Weather Score <span class="weather-tag historical" id="weather-tag">Historical</span></div>
+          <div class="score-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#e2ddd6" stroke-width="7"/>
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#8eb8d4" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" id="ring-weather"/>
+            </svg>
+            <div class="score-ring-num" id="num-weather">—</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="pb-weather" style="width:0%;background:#8eb8d4;"></div></div>
+        </div>
+        <div class="score-card">
+          <div class="score-icon">🤝</div>
+          <div class="score-label">Repayment Score</div>
+          <div class="score-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#e2ddd6" stroke-width="7"/>
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#6a9e78" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" id="ring-repay"/>
+            </svg>
+            <div class="score-ring-num" id="num-repay">—</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="pb-repay" style="width:0%;background:#6a9e78;"></div></div>
+        </div>
+      </div>
+ 
+      <div class="npk-card fade-in">
+        <h4>🧪 NPK Score Breakdown (→ Soil Health)</h4>
+        <div class="npk-row">
+          <span class="npk-label">Nitrogen (N)</span>
+          <div class="npk-bar-wrap"><div class="npk-bar-fill" id="npk-n-bar" style="width:0%;background:#4a7c59;"></div></div>
+          <span class="npk-val" id="npk-n-val">—</span>
+        </div>
+        <div class="npk-row">
+          <span class="npk-label">Phosphorus (P)</span>
+          <div class="npk-bar-wrap"><div class="npk-bar-fill" id="npk-p-bar" style="width:0%;background:#8eb8d4;"></div></div>
+          <span class="npk-val" id="npk-p-val">—</span>
+        </div>
+        <div class="npk-row">
+          <span class="npk-label">Potassium (K)</span>
+          <div class="npk-bar-wrap"><div class="npk-bar-fill" id="npk-k-bar" style="width:0%;background:#c8a97a;"></div></div>
+          <span class="npk-val" id="npk-k-val">—</span>
+        </div>
+      </div>
+ 
+      <div class="xai-section fade-in">
+        <div class="xai-section-title">⚖️ Why Was This Decision Made?</div>
+        <div id="justificationCard"></div>
+      </div>
+ 
+      <div class="xai-section fade-in">
+        <div class="xai-section-title">🤖 Why Did You Get This Score?</div>
+        <div class="xai-summary" id="xaiSummary">Loading explanation...</div>
+        <div class="contrib-title">How Each Factor Affected Your Score</div>
+        <div id="contribList"></div>
+      </div>
+ 
+      <div class="xai-section fade-in">
+        <div class="xai-section-title">💡 How To Improve Your Score</div>
+        <div id="tipsList"></div>
+      </div>
+ 
+      <div class="xai-section fade-in">
+        <div class="xai-section-title">📋 What Happens Next?</div>
+        <div class="next-steps-box" id="nextSteps"></div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- FARMER DASHBOARD -->
+<div class="screen" id="screen-farmer">
+  <div style="display:flex;flex-direction:column;min-height:100vh;background:var(--gray-50);">
+    <div class="topbar">
+      <div class="topbar-logo"><div class="topbar-icon">🌱</div>AgriCredit</div>
+      <span class="topbar-badge" style="background:var(--soil);">Farmer Portal</span>
+      <div class="topbar-user">
+        <div class="topbar-avatar" id="farmer-topbar-avatar" style="background:linear-gradient(135deg,var(--sage),var(--sage-dark));">—</div>
+        <span class="topbar-name" id="farmer-topbar-name">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+    <div class="content">
+      <div class="profile-card fade-in" style="background:linear-gradient(135deg,var(--soil) 0%,var(--soil-light) 60%,#c49a6c 100%);">
+        <div class="profile-role">Registered Farmer · AgriCredit Member</div>
+        <div class="profile-name" id="farmer-profile-name">—</div>
+        <div class="profile-meta">
+          <div class="profile-meta-item"><strong id="farmer-meta-id">—</strong>Farmer ID</div>
+          <div class="profile-meta-item"><strong id="farmer-meta-land">—</strong>Land Size</div>
+          <div class="profile-meta-item"><strong id="farmer-meta-crop">Paddy</strong>Crops</div>
+          <div class="profile-meta-item"><strong id="farmer-meta-income">—</strong>Annual Income</div>
+        </div>
+      </div>
+      <div class="stats-grid fade-in">
+        <div class="stat-card green"><div class="stat-icon">📍</div>
+          <div class="stat-value" id="farmer-stat-location">Devarakonda</div>
+          <div class="stat-label">Location, Telangana</div>
+        </div>
+        <div class="stat-card soil"><div class="stat-icon">🌍</div>
+          <div class="stat-value" id="farmer-stat-soil">—</div>
+          <div class="stat-label">Soil Type</div>
+        </div>
+        <div class="stat-card amber"><div class="stat-icon">🌿</div>
+          <div class="stat-value">Paddy</div>
+          <div class="stat-label">Primary Crop</div>
+        </div>
+        <div class="stat-card sky"><div class="stat-icon">📊</div>
+          <div class="stat-value" id="farmer-stat-score">—</div>
+          <div class="stat-label">Last Combined Score</div>
+        </div>
+      </div>
+      <div class="form-card fade-in" style="margin-bottom:1.5rem;">
+        <div class="form-section-title">🪪 Your Registered Details</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;">
+          <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:12px;padding:1.2rem 1.4rem;display:flex;align-items:center;gap:1rem;">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#e8f5ec,#c8e6d0);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:3px;">Full Name</div>
+              <div id="detail-name" style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--gray-900);">—</div>
+            </div>
+          </div>
+          <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:12px;padding:1.2rem 1.4rem;display:flex;align-items:center;gap:1rem;">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#fef3cd,#fde68a);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">💰</div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:3px;">Annual Income</div>
+              <div id="detail-income" style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:700;color:var(--gray-900);">—</div>
+            </div>
+          </div>
+          <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:12px;padding:1.2rem 1.4rem;display:flex;align-items:center;gap:1rem;">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#e0f0ff,#b8d9f5);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🌾</div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:3px;">Land Size</div>
+              <div id="detail-land" style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:700;color:var(--gray-900);">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="check-hero fade-in">
+        <div>
+          <h2>Know Your Loan Risk Score</h2>
+          <p>Run our AI-powered assessment to understand your eligibility and get personalised recommendations.</p>
+        </div>
+        <button class="btn-check" onclick="showScreen('screen-farmer-form')">Check My Score →</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- FARMER FORM -->
+<div class="screen" id="screen-farmer-form">
+  <div style="display:flex;flex-direction:column;min-height:100vh;background:var(--gray-50);">
+    <div class="topbar">
+      <div class="topbar-logo"><div class="topbar-icon">🌱</div>AgriCredit</div>
+      <span class="topbar-badge" style="background:var(--soil);">Farmer Portal</span>
+      <div class="topbar-user">
+        <div class="topbar-avatar" id="farmer-form-avatar" style="background:linear-gradient(135deg,var(--sage),var(--sage-dark));">—</div>
+        <span class="topbar-name" id="farmer-form-topbar-name">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+    <div class="content">
+      <button class="btn-back" onclick="showScreen('screen-farmer')">← Back to Dashboard</button>
+      <div class="page-title">Check My Loan Risk Score</div>
+      <p class="page-subtitle">Fill in your current farm details for an accurate ML risk assessment</p>
+      <div class="api-error" id="farmer-error"></div>
+      <div class="form-card fade-in">
+        <div class="form-section-title">🧑‍🌾 Your Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Farmer ID</label>
+            <input class="form-input" id="f-farmer-id" type="text" readonly style="background:var(--gray-50);cursor:not-allowed;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Year <small style="color:var(--gray-500);font-weight:400;">(2015–2030)</small></label>
+            <input class="form-input" id="f-year" type="number" value="2024" min="2015" max="2030">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <select class="form-select" id="f-location"><option value="Devarakonda" selected>Devarakonda</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Annual Income (₹)</label>
+            <input class="form-input" id="f-income" type="number" placeholder="e.g. 240000">
+          </div>
+        </div>
+        <div class="form-section-title" style="margin-top:1.8rem;">🌱 Land &amp; Soil</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Land Size (acres)</label><input class="form-input" id="f-land" type="number" placeholder="e.g. 8.5"></div>
+          <div class="form-group"><label class="form-label">Soil Type</label>
+            <select class="form-select" id="f-soil">
+              <option value="Clay">Clay</option>
+              <option value="Sandy">Sandy</option>
+              <option value="Loamy">Loamy</option>
+              <option value="Slit">Slit</option>
+              <option value="Peaty">Peaty</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Crop Type</label>
+            <select class="form-select" id="f-crop"><option value="Paddy" selected>Paddy</option></select>
+          </div>
+        </div>
+        <div class="form-section-title" style="margin-top:1.8rem;">🧪 NPK Soil Values</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Nitrogen — N (mg/kg) <small style="color:var(--sage);font-weight:400;">optimal: 110</small></label>
+            <input class="form-input" id="f-n" type="number" placeholder="e.g. 108">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phosphorus — P (mg/kg) <small style="color:var(--sage);font-weight:400;">optimal: 55</small></label>
+            <input class="form-input" id="f-p" type="number" placeholder="e.g. 52">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Potassium — K (mg/kg) <small style="color:var(--sage);font-weight:400;">optimal: 45</small></label>
+            <input class="form-input" id="f-k" type="number" placeholder="e.g. 43">
+          </div>
+        </div>
+        <button class="btn-calculate" id="btn-calc-farmer" onclick="calculateScore('farmer')">⚡ Calculate My Risk Score</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<script>
+  let currentRole = 'banker';
+  let loggedInFarmerId = null;
+  let farmerData = null;
+  let authMode = 'signin';
+
+  const signedUpBankers = {};
+  const signedUpFarmers = {};
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    const s = mode === 'signin';
+    document.getElementById('tab-signin').classList.toggle('active', s);
+    document.getElementById('tab-signup').classList.toggle('active', !s);
+    document.getElementById('panel-signin').classList.toggle('active', s);
+    document.getElementById('panel-signup').classList.toggle('active', !s);
+    document.getElementById('signup-success').classList.remove('show');
+  }
+
+  function checkStrength(input, barId, labelId) {
+    const pw=input.value, bar=document.getElementById(barId), lbl=document.getElementById(labelId);
+    let s=0;
+    if(pw.length>=6)s++; if(pw.length>=10)s++; if(/[A-Z]/.test(pw))s++;
+    if(/[0-9]/.test(pw))s++; if(/[^A-Za-z0-9]/.test(pw))s++;
+    const lvl=[{w:'0%',bg:'',txt:''},{w:'25%',bg:'#e74c3c',txt:'Weak'},
+               {w:'50%',bg:'#e67e22',txt:'Fair'},{w:'75%',bg:'#f39c12',txt:'Good'},
+               {w:'100%',bg:'var(--sage)',txt:'Strong'}][Math.min(s,4)];
+    bar.style.width=lvl.w; bar.style.background=lvl.bg; lbl.textContent=lvl.txt; lbl.style.color=lvl.bg;
+  }
+
+  function doSignUp() {
+    document.getElementById('signup-success').classList.remove('show');
+    if (currentRole === 'banker') {
+      const name=document.getElementById('su-b-name').value.trim();
+      const uname=document.getElementById('su-b-username').value.trim();
+      const bank=document.getElementById('su-b-bank').value.trim();
+      const branch=document.getElementById('su-b-branch').value.trim();
+      const desig=document.getElementById('su-b-designation').value.trim();
+      const pw=document.getElementById('su-b-pw').value;
+      const pw2=document.getElementById('su-b-pw2').value;
+      if(!name||!uname||!bank||!branch||!desig){showToast('Please fill all fields');return;}
+      if(pw.length<6){showToast('Password must be at least 6 characters');return;}
+      if(pw!==pw2){showToast('Passwords do not match');return;}
+      if(signedUpBankers[uname]){showToast('Username already taken — choose another');return;}
+      signedUpBankers[uname]={name,bank,branch,designation:desig,password:pw};
+      ['su-b-name','su-b-username','su-b-bank','su-b-branch','su-b-designation','su-b-pw','su-b-pw2']
+        .forEach(id=>{document.getElementById(id).value='';});
+      document.getElementById('su-b-bar').style.width='0%';
+      document.getElementById('su-b-label').textContent='';
+    } else {
+      const name=document.getElementById('su-f-name').value.trim();
+      const fidRaw=document.getElementById('su-f-id').value.trim();
+      const income=document.getElementById('su-f-income').value.trim();
+      const land=document.getElementById('su-f-land').value.trim();
+      const pw=document.getElementById('su-f-pw').value;
+      const pw2=document.getElementById('su-f-pw2').value;
+      if(!name||!fidRaw||!income||!land){showToast('Please fill all fields');return;}
+      const fid=parseInt(fidRaw);
+      if(isNaN(fid)||fid<1){showToast('Farmer ID must be a positive number');return;}
+      if(pw.length<6){showToast('Password must be at least 6 characters');return;}
+      if(pw!==pw2){showToast('Passwords do not match');return;}
+      if(signedUpFarmers[fid]){showToast('Farmer ID already registered — choose another');return;}
+      signedUpFarmers[fid]={name,annual_income:parseInt(income),land_size_acres:parseFloat(land),password:pw};
+      ['su-f-name','su-f-id','su-f-income','su-f-land','su-f-pw','su-f-pw2']
+        .forEach(id=>{document.getElementById(id).value='';});
+      document.getElementById('su-f-bar').style.width='0%';
+      document.getElementById('su-f-label').textContent='';
+    }
+    document.getElementById('signup-success').classList.add('show');
+    showToast('✅ Account created! Please Sign In.');
+  }
+
+  function setRole(role, btn) {
+    currentRole = role;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (role === 'farmer') {
+      document.getElementById('login-id-label').textContent = 'Farmer ID';
+      document.getElementById('login-id').placeholder = 'Enter your Farmer ID (e.g. 1)';
+      document.getElementById('login-hint').innerHTML =
+        'Farmer ID: <strong>1 to 500</strong> · Password: <strong>farmer[ID]@agri</strong> &nbsp;e.g. ID=1 → <strong>farmer1@agri</strong>';
+      document.getElementById('signup-banker-fields').style.display = 'none';
+      document.getElementById('signup-farmer-fields').style.display = 'block';
+    } else {
+      document.getElementById('login-id-label').textContent = 'User ID';
+      document.getElementById('login-id').placeholder = 'Enter your user ID';
+      document.getElementById('login-hint').innerHTML =
+        'Demo — Banker ID: <strong>banker01</strong> · Password: <strong>demo</strong>';
+      document.getElementById('signup-banker-fields').style.display = 'block';
+      document.getElementById('signup-farmer-fields').style.display = 'none';
+    }
+    document.getElementById('signup-success').classList.remove('show');
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function doLogin() {
+    const id = document.getElementById('login-id').value.trim();
+    const pw = document.getElementById('login-pw').value.trim();
+    if (!id || !pw) { showToast('Please enter credentials'); return; }
+
+    if (currentRole === 'banker') {
+      if (signedUpBankers[id]) {
+        if (pw !== signedUpBankers[id].password) { showToast('Incorrect password'); return; }
+        showScreen('screen-banker'); return;
+      }
+      if (pw !== 'demo') { showToast('Wrong password. Use: demo'); return; }
+      if (id !== 'banker01') { showToast('Banker not found. Use: banker01'); return; }
+      showScreen('screen-banker'); return;
+    }
+
+    const farmerIdNum = parseInt(id);
+    if (isNaN(farmerIdNum) || farmerIdNum < 1) { showToast('Farmer ID must be a positive number'); return; }
+
+    if (signedUpFarmers[farmerIdNum]) {
+      const rec = signedUpFarmers[farmerIdNum];
+      if (pw !== rec.password) { showToast('Incorrect password'); return; }
+      loggedInFarmerId = String(farmerIdNum);
+      farmerData = { Farmer_ID: farmerIdNum, name: rec.name, annual_income: rec.annual_income, land_size_acres: rec.land_size_acres, Soil_Type: '', Combined_Score: 0 };
+      populateFarmerUI(loggedInFarmerId, farmerData);
+      showScreen('screen-farmer'); return;
+    }
+
+    if (farmerIdNum > 500) { showToast('Farmer ID must be between 1 and 500 for existing farmers'); return; }
+
+    showLoader('Validating credentials…');
+    try {
+      const resp = await fetch('/api/farmer/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: farmerIdNum, password: pw })
+      });
+      const data = await resp.json();
+      hideLoader();
+      if (!resp.ok || !data.success) { showToast(data.error || 'Invalid Farmer ID or password'); return; }
+      loggedInFarmerId = String(farmerIdNum);
+      farmerData = data.farmer || data;
+      populateFarmerUI(loggedInFarmerId, farmerData);
+      showScreen('screen-farmer');
+    } catch (err) {
+      hideLoader();
+      showToast('Cannot connect to server. Make sure Flask is running on port 5000.');
+      console.error(err);
+    }
+  }
+
+  function populateFarmerUI(farmerId, data) {
+    if (!data) { fetchAndPopulateFarmer(farmerId); return; }
+    applyFarmerData(farmerId, data);
+  }
+
+  async function fetchAndPopulateFarmer(farmerId) {
+    try {
+      const resp = await fetch(`/api/farmer/${farmerId}`);
+      const data = await resp.json();
+      if (!resp.ok || data.error) { console.warn('Farmer fetch error:', data.error); return; }
+      const farmerObj = data.farmer || data;
+      farmerData = farmerObj;
+      applyFarmerData(farmerId, farmerObj);
+    } catch (err) { console.warn('Could not fetch farmer details:', err); }
+  }
+
+  function applyFarmerData(farmerId, data) {
+    if (!data) return;
+    const get = (obj, ...keys) => {
+      for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+        const lk = Object.keys(obj).find(x => x.toLowerCase() === k.toLowerCase());
+        if (lk !== undefined) return obj[lk];
+      }
+      return null;
+    };
+    const soilType = get(data, 'Soil_Type', 'soil_type') || '';
+    const score    = get(data, 'Combined_Score', 'combined_score') || '';
+    const name     = get(data, 'name') || `Farmer #${farmerId}`;
+    const income   = get(data, 'annual_income') || '';
+    const land     = get(data, 'land_size_acres') || '';
+    const incomeDisplay = income ? `₹${Number(income).toLocaleString('en-IN')}` : '—';
+    const landDisplay   = land   ? `${land} Acres` : '—';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || String(farmerId).slice(0, 2).toUpperCase();
+
+    setEl('farmer-topbar-avatar', initials);  setEl('farmer-topbar-name', name);
+    setEl('farmer-form-avatar', initials);    setEl('farmer-form-topbar-name', name);
+    setEl('farmer-profile-name', name);       setEl('farmer-meta-id', farmerId);
+    setEl('farmer-meta-land', landDisplay);   setEl('farmer-meta-income', incomeDisplay);
+    setEl('farmer-stat-soil', soilType || '—');
+    setEl('farmer-stat-score', score ? Number(score).toFixed(1) : '—');
+    setEl('detail-name', name); setEl('detail-income', incomeDisplay); setEl('detail-land', landDisplay);
+    setVal('f-farmer-id', farmerId); setVal('f-income', income || ''); setVal('f-land', land || '');
+
+    if (soilType) {
+      const soilSel = document.getElementById('f-soil');
+      let matched = false;
+      for (const opt of soilSel.options) {
+        if (opt.value.toLowerCase() === soilType.toLowerCase() ||
+            opt.text.toLowerCase().includes(soilType.toLowerCase())) {
+          soilSel.value = opt.value; matched = true; break;
+        }
+      }
+      if (!matched) { soilSel.add(new Option(soilType, soilType, true, true)); soilSel.value = soilType; }
+    }
+  }
+
+  function setEl(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
+  function setVal(id, val)  { const el = document.getElementById(id); if (el) el.value = val; }
+
+  function doLogout() {
+    document.getElementById('login-id').value = '';
+    document.getElementById('login-pw').value = '';
+    loggedInFarmerId = null; farmerData = null;
+    showScreen('screen-login');
+  }
+
+  function showLoader(msg) { document.getElementById('loader-text').textContent = msg || 'Running ML risk model…'; document.getElementById('loader').classList.add('show'); }
+  function hideLoader()    { document.getElementById('loader').classList.remove('show'); }
+  function showToast(msg)  { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+  function showError(role, msg) {
+    const el = document.getElementById(role === 'banker' ? 'banker-error' : 'farmer-error');
+    el.textContent = '⚠️ ' + msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 7000);
+  }
+
+  function setRing(id, score) {
+    const el = document.getElementById(id); if (!el) return;
+    const pct = Math.min(Math.max(score, 0), 100);
+    el.setAttribute('stroke-dashoffset', 201 - (pct / 100) * 201);
+    el.setAttribute('stroke', pct >= 78 ? '#4a7c59' : pct >= 72 ? '#f39c12' : '#e74c3c');
+  }
+
+  async function calculateScore(role) {
+    const p = role === 'banker' ? 'b' : 'f';
+    const farmerId = document.getElementById(`${p}-farmer-id`).value.trim();
+    const year     = document.getElementById(`${p}-year`).value;
+    const location = document.getElementById(`${p}-location`).value;
+    const soilType = document.getElementById(`${p}-soil`).value;
+    const n  = document.getElementById(`${p}-n`).value;
+    const pp = document.getElementById(`${p}-p`).value;
+    const k  = document.getElementById(`${p}-k`).value;
+    const crop = document.getElementById(`${p}-crop`).value;
+
+    if (!n || !pp || !k) { showToast('Please enter NPK values'); return; }
+    if (!soilType)        { showToast('Please select a soil type'); return; }
+
+    const btnId = `btn-calc-${role}`;
+    document.getElementById(btnId).disabled = true;
+    showLoader('Querying datasets & running ML model…');
+
+    try {
+      const resp = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          farmer_id: farmerId, year: parseInt(year), location,
+          soil_type: soilType, nitrogen: parseFloat(n),
+          phosphorus: parseFloat(pp), potassium: parseFloat(k), crop
+        })
+      });
+      const data = await resp.json();
+      hideLoader();
+      document.getElementById(btnId).disabled = false;
+      if (!data.success) { showError(role, data.error || 'Server error. Please try again.'); return; }
+      renderResults(data, role, farmerId, year);
+    } catch (err) {
+      hideLoader();
+      document.getElementById(btnId).disabled = false;
+      showError(role, 'Cannot connect to server. Make sure Flask is running on port 5000.');
+      console.error(err);
+    }
+  }
+
+  function renderResults(data, role, farmerId, year) {
+    const sc = data.scores;
+    const riskLevel = data.risk_level;
+    const xai  = data.xai  || {};
+    const just = data.justification || null;
+
+    if (role === 'banker') {
+      document.getElementById('results-badge').textContent = 'Banker Portal';
+      document.getElementById('results-badge').style.background = 'var(--sage-dark)';
+      document.getElementById('results-avatar').textContent = 'RK';
+      document.getElementById('results-avatar').style.background = '';
+      document.getElementById('results-name').textContent = 'Rajesh Kumar';
+      document.getElementById('results-back-btn').onclick = () => showScreen('screen-banker-form');
+    } else {
+      document.getElementById('results-badge').textContent = 'Farmer Portal';
+      document.getElementById('results-badge').style.background = 'var(--soil)';
+      const avatarEl = document.getElementById('farmer-topbar-avatar');
+      document.getElementById('results-avatar').textContent = avatarEl ? avatarEl.textContent : '—';
+      document.getElementById('results-avatar').style.background = 'linear-gradient(135deg,var(--sage),var(--sage-dark))';
+      const nameEl = document.getElementById('farmer-topbar-name');
+      document.getElementById('results-name').textContent = nameEl ? nameEl.textContent : '—';
+      document.getElementById('results-back-btn').onclick = () => showScreen('screen-farmer-form');
+    }
+
+    document.getElementById('results-farmer-id').textContent =
+      `Farmer ID: ${farmerId || '—'} · Year: ${year} · Generated just now`;
+
+    const scoreMap = { soil: sc.soil, market: sc.market, weather: sc.weather, repay: sc.repayment };
+    Object.entries(scoreMap).forEach(([key, val]) => {
+      document.getElementById('num-' + key).textContent = val.toFixed(1);
+      document.getElementById('pb-' + key).style.width = Math.min(val, 100) + '%';
+      setRing('ring-' + key, val);
+    });
+    document.getElementById('final-score-big').textContent = sc.final.toFixed(1);
+
+    const wtag = document.getElementById('weather-tag');
+    wtag.textContent = data.weather_type;
+    wtag.className = 'weather-tag ' + (data.weather_type === 'Predicted' ? 'predicted' : 'historical');
+
+    const banner = document.getElementById('risk-banner');
+    banner.className = 'risk-banner fade-in';
+
+    // ── BANKER sees loan decision language, FARMER sees neutral risk language ──
+    const cfg = role === 'banker' ? {
+      Low:    { cls:'low',    icon:'✅', title:'Low Risk — Loan Recommended',        desc:'Strong creditworthiness. Approval is advised with standard terms.' },
+      Medium: { cls:'medium', icon:'⚠️', title:'Medium Risk — Conditional Approval', desc:'Some risk factors present. Consider reduced limit or additional collateral.' },
+      High:   { cls:'high',   icon:'❌', title:'High Risk — Loan Not Recommended',    desc:'Multiple risk factors flagged. Address underlying issues before reapplying.' }
+    }[riskLevel] : {
+      Low:    { cls:'low',    icon:'✅', title:'Low Risk',    desc:'Your farm profile shows strong creditworthiness.' },
+      Medium: { cls:'medium', icon:'⚠️', title:'Medium Risk', desc:'Some risk factors need attention. Work on the improvement tips below.' },
+      High:   { cls:'high',   icon:'❌', title:'High Risk',   desc:'Multiple risk factors flagged. Review the tips below and reapply after improvements.' }
+    }[riskLevel] || { cls:'medium', icon:'⚠️', title:'Assessment Complete', desc:'' };
+
+    banner.classList.add(cfg.cls);
+    document.getElementById('risk-icon').textContent  = cfg.icon;
+    document.getElementById('risk-title').textContent = cfg.title;
+    document.getElementById('risk-desc').textContent  = cfg.desc;
+
+    const npk = data.npk_breakdown;
+    ['n','p','k'].forEach(key => {
+      document.getElementById(`npk-${key}-bar`).style.width = Math.min(npk[`score_${key}`], 100) + '%';
+      document.getElementById(`npk-${key}-val`).textContent = npk[`score_${key}`].toFixed(1);
+    });
+
+    if (just) {
+      renderJustification(just);
+    } else {
+      document.getElementById('justificationCard').innerHTML =
+        '<p style="color:var(--gray-500);font-size:0.88rem;">No justification data returned from server.</p>';
+    }
+
+    if (xai.summary) {
+      document.getElementById('xaiSummary').innerHTML = '<strong>Explanation:</strong> ' + xai.summary;
+    } else {
+      document.getElementById('xaiSummary').innerHTML =
+        '<span style="color:var(--gray-500);">Explanation not available. Ensure SHAP is installed on the server.</span>';
+    }
+
+    const contribList = document.getElementById('contribList');
+    contribList.innerHTML = '';
+    if (xai.contributions && xai.contributions.length) {
+      xai.contributions.forEach(c => {
+        const pillClass   = 'pill-'  + c.sentiment;
+        const fillClass   = 'fill-'  + c.sentiment;
+        const impactClass = c.direction === 'increased' ? 'impact-up' : c.direction === 'decreased' ? 'impact-down' : 'impact-neu';
+        const impactSign  = c.shap_value > 0.3 ? '+' : '';
+        const barWidth    = Math.min(Math.abs(c.shap_value) * 15, 100);
+        contribList.innerHTML += `
+          <div class="contrib-item">
+            <div class="contrib-header">
+              <div class="contrib-name">${c.icon} ${c.display_name}</div>
+              <div class="contrib-meta">
+                <span class="contrib-score-lbl">${c.value.toFixed(1)}/100</span>
+                <span class="contrib-pill ${pillClass}">${c.label}</span>
+              </div>
+            </div>
+            <div class="contrib-bar-wrap">
+              <div class="contrib-bar-bg"><div class="contrib-bar-fill ${fillClass}" style="width:${barWidth}%"></div></div>
+              <div class="contrib-impact ${impactClass}">${impactSign}${c.shap_value.toFixed(2)} pts ${c.arrow}</div>
+            </div>
+          </div>`;
+      });
+    } else {
+      contribList.innerHTML = '<p style="color:var(--gray-500);font-size:0.88rem;">Factor breakdown not available.</p>';
+    }
+
+    const tipsList = document.getElementById('tipsList');
+    tipsList.innerHTML = '';
+    if (xai.improve_tips && xai.improve_tips.length) {
+      xai.improve_tips.forEach(t => {
+        const pc = t.priority === 'High' ? 'priority-high' : t.priority === 'Medium' ? 'priority-medium' : 'priority-good';
+        tipsList.innerHTML += `
+          <div class="tip-item">
+            <div class="tip-icon">${t.icon}</div>
+            <div>
+              <div class="tip-title">${t.title}<span class="${pc}">${t.priority}</span></div>
+              <div class="tip-text">${t.text}</div>
+            </div>
+          </div>`;
+      });
+    } else {
+      tipsList.innerHTML = '<p style="color:var(--gray-500);font-size:0.88rem;">No improvement tips available.</p>';
+    }
+
+    const ns = document.getElementById('nextSteps');
+    if (riskLevel === 'Low') {
+      ns.innerHTML = `<h4>Your Next Steps</h4><ul>
+        <li>Visit your nearest bank with this score report</li>
+        <li>Request loan application form</li>
+        <li>Carry land documents and Aadhaar card</li>
+        <li>You qualify for priority loan processing</li></ul>`;
+    } else if (riskLevel === 'Medium') {
+      ns.innerHTML = `<h4>Your Next Steps</h4><ul>
+        <li>Visit your bank and discuss loan terms</li>
+        <li>You may be offered a reduced loan amount</li>
+        <li>Additional collateral may be required</li>
+        <li>Follow improvement tips to strengthen your profile</li></ul>`;
+    } else {
+      ns.innerHTML = `<h4>Your Next Steps</h4><ul>
+        <li>Review all improvement tips carefully</li>
+        <li>Focus on improving repayment history and soil health</li>
+        <li>Consider a micro-finance loan first to build credit</li>
+        <li>Reapply after next harvest season</li></ul>`;
+    }
+
+    showScreen('screen-results');
+    showToast(`✅ ML assessment complete — ${riskLevel} Risk (Score: ${sc.final.toFixed(1)})`);
+  }
+
+  function renderJustification(j) {
+    const c = j.color_code || 'green';
+    const iconMap = { green:'✅', amber:'⚠️', red:'❌' };
+    const icon = iconMap[c] || '✅';
+    const dotClass = 'dot-' + c;
+    const reasonsHtml = (j.supporting_reasons || []).map(r => `
+      <div class="just-reason-item">
+        <div class="just-reason-dot ${dotClass}"></div><div>${r}</div>
+      </div>`).join('');
+    const warningHtml = j.risk_warning ? `
+      <div class="just-warning"><span>⚠️</span>
+        <div>${j.risk_warning}
+          ${j.margin_to_next != null ? `<span class="just-margin-pill ${c==='amber'?'margin-pill-amber':'margin-pill-red'}">Gap: ${j.margin_to_next} pts</span>` : ''}
+        </div>
+      </div>` : '';
+    document.getElementById('justificationCard').innerHTML = `
+      <div class="justification-card just-${c}">
+        <div class="just-header">
+          <div class="just-icon ${c}">${icon}</div>
+          <div>
+            <div class="just-decision-label ${c}">Decision</div>
+            <div class="just-headline ${c}">${j.headline || ''}</div>
+          </div>
+        </div>
+        <hr class="just-divider">
+        <div class="just-section-title">Primary Reason</div>
+        <div class="just-primary-reason">${j.primary_reason || ''}</div>
+        <div class="just-section-title">Supporting Factors</div>
+        ${reasonsHtml}
+        <hr class="just-divider">
+        <div class="just-section-title">What You Should Do</div>
+        <div class="just-next-action">${j.next_action || ''}</div>
+        ${warningHtml}
+      </div>`;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('screen-login').classList.contains('active')) doLogin();
+  });
+</script>
+</body>
+</html>
